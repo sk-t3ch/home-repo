@@ -1,0 +1,34 @@
+kind: pipeline
+name: commitPipeline
+
+trigger:
+  event:
+  - push
+  
+platform:
+  os: linux
+  arch: arm
+
+steps:
+
+  - name: validate-trigger-rebuild-of-image
+    image: plugins/ansible:1
+    settings:
+      private_key:
+        from_secret: ansible_private_key
+      playbook: ansible/playbook.yml
+      inventory: ansible/inventory.yml
+      syntax_check: true
+
+  - name: trigger-rebuild-of-image
+    image: plugins/ansible:1
+    environment:
+      ansible_private_key: 
+        from_secret: ansible_private_key
+    settings:
+      private_key:
+        from_secret: ansible_private_key
+      playbook: ansible/playbook.yml
+      inventory: ansible/inventory.yml
+    
+

@@ -1,0 +1,27 @@
+kind: pipeline
+name: commitPipeline
+
+trigger:
+  event:
+  - push
+
+platform:
+  os: linux
+  arch: arm
+
+
+steps:
+  - name: docker  
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: docker_registry_username
+      password:
+        from_secret: docker_registry_password
+      repo: registry.<domain>g/aws-cfn
+      registry: registry.<domain>
+      tags: latest
+ 
+  
+image_pull_secrets:
+  - dockerconfigjson

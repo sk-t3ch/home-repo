@@ -1,0 +1,50 @@
+kind: pipeline
+name: commitPipeline
+
+trigger:
+  event:
+  - push
+
+platform:
+  os: linux
+  arch: arm
+
+
+steps:
+  - name: validate-seeder-infrastructure
+    image: registry.<domain>/aws-cfn
+    settings:
+      mode: validate
+      template: infrastructure.yml
+    environment:
+      AWS_ACCESS_KEY_ID:  
+        from_secret: aws_id
+      AWS_SECRET_ACCESS_KEY:
+        from_secret: aws_key
+
+
+  - name: copy script files
+    image: registry.<domain>/aws-cli
+    commands:
+      - aws s3 cp ./scripts s3://<your_bucket>/scripts --recursive
+    environment:
+      AWS_ACCESS_KEY_ID: 
+        from_secret: aws_id
+      AWS_SECRET_ACCESS_KEY:
+        from_secret: aws_key
+      AWS_DEFAULT_REGION: "eu-west-1"
+      
+  - name: deploy
+    image: registry.<domain>/aws-cfn
+    settings:
+      mode: deploy
+      template: infrastructure.yml
+      stackname: drone-runner
+    environment:
+      AWS_ACCESS_KEY_ID:  
+        from_secret: aws_id
+      AWS_SECRET_ACCESS_KEY:
+        from_secret: aws_key
+  
+image_pull_secrets:
+  - dockerconfigjson

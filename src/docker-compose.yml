@@ -1,0 +1,170 @@
+version: "3"
+
+networks:
+  appnet:
+    external: false
+  homereponet:
+    external: true
+  
+volumes:
+  gitea-app:
+  gitea-db:
+  portainer:
+  drone:
+  traefik:
+  registry:
+    
+services:
+  backup:
+    image: t3chflicks/backuper
+    container_name: backup
+    restart: always
+    env_file:
+      - backup.env
+    volumes:
+      - /mnt/hdd:/data
+
+  registry:
+    image: registry:2
+    container_name: registry
+    restart: always
+    networks: 
+      - homereponet
+    volumes:
+      - /mnt/hdd/registry:/var/lib/registry
+      - ./auth:/auth
+    labels:
+      - "traefik.enable=true"
+      - traefik.registry.frontend.rule=Host:registry.<domain>
+      - traefik.backend=registry
+      - traefik.docker.network=homereponet
+      - traefik.registry.port=5000
+    environment:
+      - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/data
+      - REGISTRY_AUTH=htpasswd
+      - REGISTRY_AUTH_HTPASSWD_REALM=Registry
+      - REGISTRY_AUTH_HTPASSWD_PATH=/auth/registry.password
+
+
+  gitea-app:
+    image: webhippie/gitea
+    env_file:
+      - gitea.env
+    container_name: gitea-app
+    restart: always
+    networks:
+      - appnet
+      - homereponet
+    volumes:
+      - /mnt/hdd/gitea_data:/data
+    ports:
+      - "22:22"
+    depends_on:
+      - gitea-db
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - traefik.backend=gitea-app
+      - traefik.git.frontend.rule=Host:git.<domain>
+      - traefik.docker.network=homereponet
+      - traefik.git.port=3000
+
+  gitea-db:
+    image: postgres:alpine
+    container_name: gitea-db
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - /Volumes/Untitled/gitea_db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=gitea
+      - POSTGRES_DB=gitea
+    networks:
+      - appnet
+
+  portainer:
+    image: portainer/portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    networks:
+      - homereponet
+    ports:
+      - 9000:9000
+      - 8000:9000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/hdd/portainer:/data
+    labels:
+      - "traefik.enable=true"
+      - traefik.backend=portainer
+      - traefik.portainer.frontend.rule=Host:portainer.<domain>
+      - traefik.docker.network=homereponet
+      - traefik.portainer.port=9000
+
+  drone:
+    image: drone/drone:1-linux-arm 
+    container_name: drone
+    volumes:
+      - /mnt/hdd/drone:/var/lib/drone/
+    restart: always
+    depends_on:
+      - gitea-app
+      - traefik
+    environment:
+      - DRONE_OPEN=true
+      - DRONE_GITEA_CLIENT_ID=b50c8818-1254-4fd5-b694-8a44fe4a5b30
+      - DRONE_GITEA_CLIENT_SECRET=5r0gXlgdXONefelFBuKLtfSmf2osO7LqyTAmkmJ5IUM=
+      - DRONE_GITEA_SERVER=http://git.<domain>
+      - DRONE_SERVER_HOST=drone.<domain>
+      - DRONE_SERVER_PROTO=https
+      - DRONE_TLS_AUTOCERT=false
+      - DRONE_RPC_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE1NzI5NTYxODh9.mm3CtHi8i-UfWlGR44or1m70f-OCiz6_NU-gCJR6N6c
+      - DOCKER_ARCH=arm
+      - DRONE_LOGS_DEBUG=true
+      - DRONE_LOGS_COLOR=true
+      - DRONE_LOGS_TRACE=true
+      - DRONE_AGENTS_ENABLED=true
+    networks:
+      - homereponet
+      - appnet
+    labels:
+      - "traefik.enable=true"
+      - traefik.backend=drone
+      - traefik.drone.frontend.rule=Host:drone.<domain>
+      - traefik.drone.port=80
+      - traefik.docker.network=homereponet
+    
+  runner:
+    container_name: runner
+    image: drone/drone-runner-docker:1-linux-arm 
+    volumes:
+      -  /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - drone
+    environment:
+      - DRONE_RPC_HOST=drone.skelectronics.duckdns.org
+      - DRONE_RPC_PROTO=https
+      - DRONE_RPC_SECRET=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJuYmYiOjE1NzI5NTYxODh9.mm3CtHi8i-UfWlGR44or1m70f-OCiz6_NU-gCJR6N6c
+    restart: always
+    ports:
+      - 3000:3000
+    networks:
+    - appnet
+    - homereponet
+
+  traefik:
+    image: traefik:1.7-alpine
+    container_name: "traefik"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    networks:
+      - homereponet
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.toml:/traefik.toml
+      - ./traefik/acme:/etc/traefik/acme
+    restart: always

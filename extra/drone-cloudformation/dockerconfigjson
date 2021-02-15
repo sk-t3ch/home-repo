@@ -1,0 +1,7 @@
+{
+	"auths": {
+		"https://registry.<domain>": {
+			"auth": "user:password hased"
+		}
+	}
+}

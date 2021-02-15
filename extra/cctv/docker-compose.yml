@@ -1,0 +1,15 @@
+version: "2"
+
+services:
+  cctv:
+    container_name: cctv
+    image: *
+    volumes:
+      -  /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    volumes:
+      - ./motion.conf:/etc/motion/motion.conf
+    devices:
+      - "/dev/video0:/dev/video0"
+    ports:
+      - "8081:8081"

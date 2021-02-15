@@ -1,0 +1,17 @@
+kind: pipeline
+name: commitPipeline
+
+trigger:
+  event:
+  - push
+
+platform:
+  os: linux
+  arch: amd64
+
+
+steps:
+  - name: buildsomething
+    image: python:alpine
+    commands:
+      - echo 'hello world'

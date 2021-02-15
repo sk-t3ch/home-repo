@@ -1,0 +1,47 @@
+---
+- hosts: cameras
+  
+  vars:
+
+  pre_tasks:
+ 
+  tasks:
+  - name: .ssh directory
+    file:
+      path: ~/.ssh
+      owner: pi
+      group: pi
+      state: directory
+    become: yes
+
+  
+  - name: put key in
+    copy:
+      content: "{{ lookup('env','ansible_private_key') }}"
+      dest: ~/.ssh/deploy_key
+      owner: pi
+      group: pi
+      mode: 0600
+    become: pi
+      
+  - name: Delete old repo if exists
+    shell:
+      cmd: rm -rf cctv
+      chdir: /home/pi/
+    become: pi
+      
+  - name: clone the repo
+    git:
+      repo: ssh://git@git.<domain>/<user>/cctv.git
+      dest: /home/pi/cctv
+      key_file: ~/.ssh/deploy_key
+      accept_hostkey: yes
+      force: yes
+    become: pi
+       
+  - name: Rebuild docker image
+    shell:
+      cmd: docker-compose up --remove-orphans --force-recreate --build -d
+      chdir: /home/pi/cctv
+
+  handlers:

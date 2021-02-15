@@ -1,0 +1,72 @@
+Description: Create Drone Runner on AWS 
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  UserData:
+    Type: String
+    Default: |
+      #!/bin/bash -xe
+      aws s3 cp s3://<your_bucket>/scripts/ . --recursive;
+      sudo chmod +x start.sh;
+      sudo ./start.sh;
+
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "ec2.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: ScriptsBucketAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:Get*"
+                Resource:
+                  - "arn:aws:s3:::t3-drone-runner/scripts/*"
+              - Effect: Allow
+                Action:
+                  - "s3:ListBucket"
+                  - "s3:ListObjectsV2"
+                Resource:
+                  - "arn:aws:s3:::t3-drone-runner"
+      Path: "/"
+
+  InstancePolicy:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Path: "/"
+      Roles:
+        - !Ref Role
+
+  EC2: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: "ami-028188d9b49b32a80"
+      KeyName: "home_repo_drone_runner"
+      InstanceType: t1.micro
+      UserData:
+            Fn::Base64: !Ref UserData
+      IamInstanceProfile: !Ref InstancePolicy
+      SecurityGroupIds:
+      - !Ref InstanceSecurityGroup
+  
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: Allow ssh
+        SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+
+    
+      

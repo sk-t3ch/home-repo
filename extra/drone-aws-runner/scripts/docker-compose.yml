@@ -1,0 +1,17 @@
+version: "2"
+
+services:
+  runner:
+    container_name: runner
+    image: drone/drone-runner-docker:1
+    volumes:
+      -  /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    environment:
+      - DRONE_RPC_HOST=drone.<domain>
+      - DRONE_RPC_PROTO=https
+      - DRONE_RPC_SECRET=<your_secret>
+    restart: always
+    ports:
+      - "3000:3000"
+
