@@ -1,8 +1,10 @@
-# Home Repo
-This repository stores the code for creating your own home development pipeline on a Raspberry Pi.
-I used a RPi 4 with 4GB RAM.
+# [T3chFlicks](https://t3chflicks.org): Home Repo
+> Project code for creating a home development pipeline using RaspberryPi with CI/CD pipelines, git repo, docker registry, and monitoring.
 
-![](./containership.png)
+### Read The Blog Post ([github](./blog_posts/1_home-devops-pipeline-a-junior-engineers-tale.md)/[medium](https://medium.com/@t3chflicks/home-devops-pipeline-a-junior-engineers-tale-1-4-336ed07a6ec0))
+> ![](./containership.png)
+
+---
 
 There are four blog posts (`blog_posts/`):
 1. [Intro (docker and git)](https://medium.com/@t3chflicks/home-devops-pipeline-a-junior-engineers-tale-1-4-336ed07a6ec0)
@@ -12,3 +14,6 @@ There are four blog posts (`blog_posts/`):
 
 Inside the `src/` folder there is all the code required for creating your own development pipeline.
 Inside the `extra/` folder there is a the code required for creating some of the images and testing.
+
+## Notes
+I used a RPi 4 with 4GB RAM.
