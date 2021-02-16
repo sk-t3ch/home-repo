@@ -19,3 +19,9 @@ Inside the `extra/` folder there is a the code required for creating some of the
 
 ## Notes
 I used a RPi 4 with 4GB RAM.
+
+---
+
+This project was created by [T3chFlicks](https://t3chflicks.org) - A tech focused education and services company.
+
+---
